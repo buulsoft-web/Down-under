@@ -1,0 +1,2824 @@
+<!DOCTYPE html>
+<html lang="nl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Down Under Conversion</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg:      #f5f5f0;
+    --surface: #ffffff;
+    --border:  rgba(0,0,0,0.10);
+    --text:    #1a1a1a;
+    --sub:     #666;
+    --gold:    #b8860b;
+    --green:   #1a7a1a;
+    --red:     #c0392b;
+    --wa:      #25d366;
+    --bar-bg:  #ffffffee;
+    --shadow:  0 1px 4px rgba(0,0,0,0.08);
+  }
+  [data-theme="dark"] {
+    --bg:      #0d2b0d;
+    --surface: rgba(255,255,255,0.05);
+    --border:  rgba(200,168,75,0.2);
+    --text:    #f0ead6;
+    --sub:     #a89060;
+    --gold:    #c8a84b;
+    --green:   #2db52d;
+    --red:     #e05545;
+    --bar-bg:  rgba(13,43,13,0.97);
+    --shadow:  0 1px 4px rgba(0,0,0,0.3);
+  }
+
+
+  /* ═══════════════════════════════════════
+     SPLASH SCREEN
+  ═══════════════════════════════════════ */
+  #splash {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #f5f5f0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0;
+    overflow: hidden;
+    transition: opacity 0.6s ease;
+  }
+  #splash.hide {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Animated background grid */
+  #splash-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(184,134,11,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(184,134,11,0.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+    animation: bgShift 8s linear infinite;
+  }
+  @keyframes bgShift {
+    from { background-position: 0 0; }
+    to   { background-position: 32px 32px; }
+  }
+
+  /* Boomerang icon */
+  #splash-icon {
+    position: relative; z-index: 2;
+    font-size: 3.5rem; line-height: 1;
+    animation: boomerang 1.8s ease-in-out infinite;
+    margin-bottom: 0.6rem;
+  }
+  @keyframes boomerang {
+    0%   { transform: rotate(0deg) scale(1); }
+    30%  { transform: rotate(-30deg) scale(1.15); }
+    60%  { transform: rotate(20deg) scale(0.95); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+
+  /* Title */
+  #splash-title {
+    position: relative; z-index: 2;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 8vw, 3.2rem);
+    letter-spacing: 0.08em;
+    color: #b8860b;
+    line-height: 1;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(18px);
+    animation: fadeUp 0.6s 0.2s forwards;
+  }
+  #splash-sub {
+    position: relative; z-index: 2;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(0.85rem, 3vw, 1.1rem);
+    letter-spacing: 0.25em;
+    color: rgba(184,134,11,0.5);
+    margin-top: 0.15rem;
+    margin-bottom: 1.4rem;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeUp 0.5s 0.5s forwards;
+  }
+
+  /* Demo terminal */
+  /* Demo: input field left + WA output bubble right */
+  #splash-demo {
+    position: relative; z-index: 2;
+    width: min(88vw, 300px);
+    background: transparent;
+    padding: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.95rem;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.8s forwards;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+  /* Input field — like the app, left aligned */
+  #demo-input-bubble {
+    align-self: flex-start;
+    width: 100%;
+    background: #ffffff;
+    color: #1a1a1a;
+    border: 1px solid rgba(184,134,11,0.3);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem 0.5rem 0.75rem;
+    font-size: 0.95rem;
+    font-family: 'IBM Plex Mono', monospace;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    height: 4.7em;
+    overflow: hidden;
+    position: relative;
+  }
+  #demo-input-bubble::after {
+    content: '|';
+    color: #b8860b;
+    animation: blink 0.8s step-end infinite;
+  }
+  #demo-input-bubble.done::after { content: ''; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  #demo-input-icons {
+    position: absolute;
+    bottom: 0.4rem;
+    right: 0.4rem;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    z-index: 10;
+  }
+  .demo-input-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+  .demo-input-icon.mic {
+    background: #25d366;
+    color: #fff;
+  }
+
+  /* Output bubbles — fanned layout */
+  .demo-bubbles-stack {
+    position: relative;
+    width: 100%;
+    align-self: flex-end;
+    height: 12em;
+  }
+  .demo-bubble-out {
+    position: absolute;
+    background: #dcf8c6;
+    color: #111;
+    border-radius: 10px 10px 2px 10px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.78rem;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.22);
+    overflow: hidden;
+    line-height: 1.4;
+    text-align: right;
+  }
+  /* Bubble 1: Reverse — left side, tilted left, TOP of stack */
+  #demo-output-bubble {
+    width: 75%;
+    height: 4.6em;
+    left: 0;
+    top: 0.4em;
+    transform: rotate(-6deg);
+    transform-origin: bottom left;
+    z-index: 11;
+    background: #dcf8c6;
+  }
+  /* Bubble 2: Secret/scramble — right side, tilted right, MIDDLE */
+  #demo-output-bubble2 {
+    width: 75%;
+    height: 4.6em;
+    right: 0;
+    top: 3.1em;
+    transform: rotate(5deg);
+    transform-origin: bottom right;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.4s;
+    background: #caedb8;
+  }
+  /* Bubble 3: Chinese — center, flat, BOTTOM, single line */
+  #demo-output-bubble3 {
+    width: 75%;
+    left: 50%;
+    transform: translateX(-50%) rotate(-4deg);
+    top: 8.0em;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.4s;
+    background: #b8e0a8;
+    height: 3.2em;
+  }
+  #demo-output-bubble2.visible { opacity: 1; }
+  #demo-output-bubble3.visible { opacity: 1; }
+  .demo-out-char2 {
+    display: inline-block;
+    white-space: pre;
+    color: #1a7a1a;
+    font-size: 0.95rem;
+  }
+  .demo-out-char2.glitch {
+    color: #b8860b;
+  }
+
+  .demo-out-char {
+    display: inline-block;
+    color: #111;
+    font-size: 0.95rem;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.22s, transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .demo-out-char.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Splash feature buttons */
+  #splash-features {
+    position: relative; z-index: 2;
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+    opacity: 0;
+    animation: fadeUp 0.4s 1.0s forwards;
+  }
+  .splash-feat-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    background: #fff;
+    border: 1.5px solid rgba(184,134,11,0.3);
+    border-radius: 10px;
+    padding: 0.45rem 0.8rem;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .splash-feat-btn:active { transform: scale(0.93); background: rgba(184,134,11,0.08); }
+  .splash-feat-btn .feat-icon { font-size: 1.3rem; line-height: 1; }
+  .feat-icon-spin {
+    display: inline-block;
+    animation: spinLeft 4.8s linear infinite;
+  }
+  @keyframes spinLeft {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(-360deg); }
+  }
+  .splash-feat-btn .feat-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: #b8860b;
+  }
+
+  /* Buulsoft credit */
+  #splash-credit {
+    position: relative; z-index: 2;
+    margin-top: 1.8rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.3em;
+    color: #b8860b;
+    opacity: 0;
+    animation: fadeUp 0.4s 1.1s forwards;
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .sl-fixed { display: inline; }
+  .sl-mid   { display: inline; transition: color 0.1s; color: #b8860b; }
+
+
+  html {
+    height: 100%;
+    height: -webkit-fill-available;
+  }
+  body {
+    height: 100%;
+    min-height: -webkit-fill-available;
+    background: var(--bg);
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: background 0.2s, color 0.2s;
+    /* iOS safe areas */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* ── Header ── */
+  header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.9rem 0.5rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  .logo-row { display: flex; align-items: center; gap: 0.45rem; }
+
+  .boomerang {
+    font-size: 1.2rem;
+    animation: spin-lazy 6s linear infinite;
+  }
+  @keyframes spin-lazy {
+    0%,45% { transform: rotate(0deg); }
+    35%    { transform: rotate(360deg); }
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.06em;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .tagline {
+    font-size: 0.52rem;
+    color: var(--sub);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* theme toggle */
+  #themeBtn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.3rem 0.55rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    line-height: 1;
+    box-shadow: var(--shadow);
+    transition: background 0.2s;
+  }
+
+  /* ── Main scrollable ── */
+  main {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 0.3rem 0.75rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* ── Panel ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.65rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-lbl {
+    font-size: 0.55rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .char-count { font-size: 0.55rem; color: var(--sub); }
+
+  textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    padding: 0.5rem 2.4rem 0.5rem 0.65rem;
+    resize: none;
+    height: 72px;
+    caret-color: var(--gold);
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-appearance: none;
+  }
+  /* ── Keyboard/mic icons inside input box (bottom-right, like splash demo) ── */
+  .input-icons {
+    position: absolute;
+    bottom: 0.4rem;
+    right: 0.4rem;
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+    z-index: 1;
+  }
+  .input-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    padding: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .input-icon:active { transform: scale(0.92); }
+  .input-icon.mic {
+    background: #25d366;
+    color: #fff;
+    border-color: #25d366;
+  }
+  .input-icon.mic.listening {
+    background: var(--red);
+    border-color: var(--red);
+    animation: micPulse 1s ease-in-out infinite;
+  }
+  @keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,0.5); }
+    50%      { box-shadow: 0 0 0 5px rgba(192,57,43,0); }
+  }
+  body.mini .input-icons { bottom: 0.25rem; right: 0.25rem; gap: 0.25rem; }
+  body.mini .input-icon { width: 18px; height: 18px; }
+  body.mini .input-icon svg { width: 10px; height: 10px; }
+  [data-theme="dark"] .output-text:not(.empty) {
+    background: #005c4b;
+    color: #e9f5f2;
+  }
+  [data-theme="dark"] .output-text::after {
+    border-left-color: #005c4b;
+  }
+
+  /* output */
+  .out-wrap {
+    padding: 0.55rem 0.65rem 0.65rem;
+    min-height: 48px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .output-text {
+    display: inline-block;
+    max-width: 88%;
+    background: #dcf8c6;
+    color: #111;
+    border-radius: 12px 12px 3px 12px;
+    padding: 0.5rem 0.75rem 0.55rem;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    word-break: break-word;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    text-align: left;
+    position: relative;
+  }
+  /* WhatsApp tail */
+  .output-text::after {
+    content: '';
+    position: absolute;
+    bottom: 0; right: -7px;
+    width: 0; height: 0;
+    border: 8px solid transparent;
+    border-left-color: #dcf8c6;
+    border-bottom: 0;
+    border-right: 0;
+  }
+  .output-text.empty {
+    background: none;
+    box-shadow: none;
+    color: var(--sub);
+    opacity: 0.55;
+    font-size: 0.78rem;
+    border-radius: 0;
+    padding: 0.3rem 0;
+  }
+  .output-text.empty::after { display: none; }
+  .output-text.translate-pending {
+    cursor: pointer;
+    text-decoration: underline dotted var(--sub);
+  }
+
+  /* 3-button row below input */
+  .action-row {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem 0.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .action-row button {
+    flex: 1;
+    border: none;
+    border-radius: 8px;
+    padding: 0.62rem 0.4rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    transition: transform 0.08s, opacity 0.15s;
+    box-shadow: var(--shadow);
+    min-height: 44px;
+    -webkit-appearance: none;
+    appearance: none;
+    touch-action: manipulation;
+  }
+  .action-row button:active { transform: scale(0.95); }
+  .action-row button:disabled { opacity: 0.3; pointer-events: none; }
+  .btn-clear { background: rgba(192,57,43,0.1); border: 1px solid rgba(192,57,43,0.25); color: var(--red); }
+  .btn-copy  { background: var(--gold); color: #fff; }
+  .btn-wa    { background: var(--wa);   color: #fff; }
+
+  /* ── Mode toggles ── */
+  .mode-row {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0 0.75rem 0.25rem;
+  }
+  .mode-btn {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.42rem 0.3rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--sub);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    box-shadow: var(--shadow);
+    white-space: nowrap;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .mode-btn.active {
+    background: rgba(200,168,75,0.15);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .mode-btn:active { transform: scale(0.95); }
+
+  /* ── Translate wrap (button + target flag) ── */
+  .translate-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .translate-wrap .mode-btn {
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .target-lang-btn {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: none;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+    padding: 0.28rem 0.42rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .target-lang-btn:active { transform: scale(0.92); }
+  /* highlight whole group when active */
+  .translate-wrap:has(.mode-btn.active) {
+    border-color: var(--gold);
+  }
+  .translate-wrap.translate-active {
+    border-color: var(--gold);
+  }
+  .mode-btn.active ~ .target-lang-btn,
+  .translate-wrap.translate-active .target-lang-btn {
+    border-color: var(--gold);
+    background: rgba(200,168,75,0.12);
+  }
+
+  /* ── Lang toggle ── */
+  .lang-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.28rem 0.5rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    line-height: 1;
+    box-shadow: var(--shadow);
+    transition: background 0.2s;
+    white-space: nowrap;
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* ── Contacts ── */
+  .section-lbl {
+    font-size: 0.52rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sub);
+    padding: 0 0.1rem;
+  }
+
+  .contacts-bar {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 1px;
+  }
+  .contacts-bar::-webkit-scrollbar { display: none; }
+
+  .contact-chip {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.22rem 0.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--gold);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s;
+    box-shadow: var(--shadow);
+  }
+  .contact-chip.selected, .contact-chip:active { background: rgba(200,168,75,0.15); }
+  .contact-chip .del { margin-left: 0.3rem; color: var(--red); font-size: 0.6rem; opacity: 0.7; }
+
+  .btn-add-contact {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 0.22rem 0.55rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--sub);
+    cursor: pointer;
+  }
+
+  /* phone row */
+  .phone-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+  .phone-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.42rem 0.65rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text);
+    outline: none;
+    box-shadow: var(--shadow);
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  .phone-row input::placeholder { color: var(--sub); opacity: 0.5; }
+  .phone-row input:focus { border-color: var(--gold); }
+
+  .btn-save {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.42rem 0.55rem;
+    font-size: 0.8rem;
+    color: var(--gold);
+    cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+
+
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(50px);
+    background: var(--green);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 0.72rem;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+    z-index: 999;
+    pointer-events: none;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* ── Toggle buttons (mini + theme) ── */
+  #miniBtn, #themeBtn, #splitHelpBtn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.28rem 0.5rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    line-height: 1;
+    box-shadow: var(--shadow);
+    transition: background 0.2s;
+    white-space: nowrap;
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* ── Title bar ── */
+  #titlebar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.22rem 0.9rem;
+    background: var(--gold);
+    gap: 0.5rem;
+  }
+  #titlebar .tb-brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: #fff;
+    opacity: 0.75;
+    white-space: nowrap;
+  }
+  #titlebar .tb-sep {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.65rem;
+  }
+  #titlebar .tb-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  /* ── Mini mode ── */
+  body.mini header .logo-row { display: none; }
+  body.mini header {
+    padding: 0.28rem 0.6rem;
+    gap: 0.1rem;
+    flex-wrap: nowrap;
+  }
+  /* round icon buttons (lang/mini/split-help/theme) get smaller, wider */
+  body.mini #langBtn,
+  body.mini #miniBtn,
+  body.mini #splitHelpBtn,
+  body.mini #themeBtn {
+    padding: 0.18rem 0.58rem !important;
+    font-size: 0.68rem !important;
+    min-width: 0;
+  }
+  /* action-row moves into header in mini mode */
+  body.mini .action-row {
+    display: contents; /* children flow into header flex */
+  }
+  body.mini .action-row button {
+    flex-direction: column !important;
+    justify-content: center;
+    align-items: center;
+    gap: 0.08rem !important;
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.66rem !important;
+    border-radius: 9px;
+    box-shadow: var(--shadow);
+    flex: 0 0 auto !important;
+    width: 46px;
+    min-width: 46px;
+    height: 44px !important;
+    min-height: 44px !important;
+    line-height: 1.15 !important;
+  }
+  body.mini .action-row .btn-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+  body.mini .action-row svg.btn-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+  body.mini .action-row .btn-label {
+    font-size: 0.56rem;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  body.mini header {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  body.mini #headerControls {
+    flex-shrink: 0;
+  }
+  body.mini .hide-mini { display: none !important; }
+  body.mini main { padding: 0.3rem 0.5rem; gap: 0.3rem; }
+
+  /* panels: stacked normally, side-by-side in mini */
+  .panels-row { display: flex; flex-direction: column; gap: 0.5rem; }
+  body.mini .panels-row { flex-direction: row; gap: 0.3rem; }
+  body.mini .panels-row .panel { flex: 1; min-width: 0; }
+
+  /* mini: label above textarea, no panel-head bar */
+  body.mini .panel-head { display: none; }
+  body.mini .panel { position: relative; }
+  body.mini .panel-lbl-float {
+    display: block;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    padding: 0.2rem 0.4rem 0;
+  }
+  .panel-lbl-float { display: none; } /* hidden in normal mode */
+  body.mini textarea { height: 58px; font-size: 0.82rem; padding: 0.2rem 1.9rem 0.2rem 0.4rem; }
+  body.mini .out-wrap { padding: 0.2rem 0.4rem; min-height: 58px; }
+  body.mini .output-text { font-size: 0.82rem; }
+
+  /* ── Speed picker buttons ── */
+  .speed-opt-btn {
+    flex: 1;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 0.6rem 0.2rem 0.5rem;
+    font-size: 1.35rem;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    transition: background 0.12s, border-color 0.12s, transform 0.08s;
+    box-shadow: var(--shadow);
+    line-height: 1;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .speed-opt-btn span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--sub);
+  }
+  .speed-opt-btn:hover, .speed-opt-btn:active {
+    background: rgba(200,168,75,0.15);
+    border-color: var(--gold);
+    transform: scale(0.95);
+  }
+  .speed-opt-btn:hover span, .speed-opt-btn:active span {
+    color: var(--gold);
+  }  /* ── Split screen animated tutorial ── */
+  .split-phone {
+    position: relative;
+    width: 120px;
+    height: 210px;
+    margin: 0 auto 0.9rem;
+    border: 3px solid var(--border);
+    border-radius: 18px;
+    background: var(--bg);
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  }
+  .split-scene {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.4rem;
+    text-align: center;
+    animation: splitStepFade 7.2s infinite;
+  }
+  .split-scene.s1 { animation-delay: 0s; }
+  .split-scene.s2 { animation-delay: 1.8s; }
+  .split-scene.s3 { animation-delay: 3.6s; }
+  .split-scene.s4 { animation-delay: 5.4s; }
+  @keyframes splitStepFade {
+    0%   { opacity: 0; }
+    3%   { opacity: 1; }
+    22%  { opacity: 1; }
+    27%  { opacity: 0; }
+    100% { opacity: 0; }
+  }
+  .split-scene .split-icon-big { font-size: 1.8rem; line-height: 1; }
+  .split-scene .split-caption {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.56rem;
+    color: var(--sub);
+    line-height: 1.3;
+  }
+  .split-card-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 70%;
+  }
+  .split-card {
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    font-size: 1.1rem;
+    padding: 0.25rem;
+  }
+  .split-half {
+    width: 100%;
+    height: 42%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+  .split-half.top { background: rgba(200,168,75,0.15); border-bottom: 2px dashed var(--gold); }
+  .split-half.bottom { background: rgba(37,211,102,0.12); }
+  .split-finger {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+    opacity: 0;
+    top: 82%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: splitFingerMove 7.2s infinite;
+  }
+  @keyframes splitFingerMove {
+    0%, 24%   { opacity: 0; top: 88%; }
+    27%       { opacity: 1; top: 88%; }
+    45%       { opacity: 1; top: 88%; }
+    48%       { opacity: 1; top: 88%; }
+    58%       { opacity: 1; top: 22%; }
+    70%       { opacity: 1; top: 22%; }
+    76%, 100% { opacity: 0; top: 22%; }
+  }
+</style>
+</head>
+<body>
+<!-- ═══════════════ SPLASH SCREEN ═══════════════ -->
+<div id="splash">
+  <div id="splash-bg"></div>
+  <div id="splash-icon">🪃</div>
+  <div id="splash-title">Down Under<br>Conversion</div>
+  <div id="splash-sub">Flip je woorden · G'day van beneden</div>
+  <div id="splash-demo">
+    <div style="position:relative; width:100%;">
+      <div id="demo-input-bubble"></div>
+      <div id="demo-input-icons">
+        <div class="demo-input-icon">⌨️</div>
+        <div class="demo-input-icon mic">
+          <svg width="14" height="16" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="0" width="6" height="12" rx="3" fill="white"/>
+            <path d="M1 9a6 6 0 0 0 12 0" stroke="white" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+            <line x1="7" y1="15" x2="7" y2="18" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="4" y1="18" x2="10" y2="18" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="demo-bubbles-stack">
+      <div id="demo-output-bubble" class="demo-bubble-out"></div>
+      <div id="demo-output-bubble2" class="demo-bubble-out"></div>
+      <div id="demo-output-bubble3" class="demo-bubble-out"></div>
+    </div>
+  </div>
+  <div id="splash-features">
+    <button class="splash-feat-btn" onclick="dismissSplashAndMode('reverse')">
+      <span class="feat-icon feat-icon-spin">🔄</span>
+      <span class="feat-label">Reverse</span>
+    </button>
+    <button class="splash-feat-btn" onclick="dismissSplashAndMode('secret')">
+      <span class="feat-icon">🔐</span>
+      <span class="feat-label" id="splashScrambleLabel"><span class="sl-fixed">S</span><span class="sl-mid" id="sl1">c</span><span class="sl-mid" id="sl2">r</span><span class="sl-mid" id="sl3">a</span><span class="sl-mid" id="sl4">m</span><span class="sl-mid" id="sl5">b</span><span class="sl-mid" id="sl6">l</span><span class="sl-fixed">e</span></span>
+    </button>
+    <button class="splash-feat-btn" onclick="dismissSplashAndMode('translate')">
+      <span class="feat-icon" id="splashTranslateFlag">🇦🇺</span>
+      <span class="feat-label">Translate</span>
+    </button>
+  </div>
+  <div id="splash-credit">BUULSOFT</div>
+</div>
+
+
+<div id="titlebar">
+  <span class="tb-brand">Buulsoft v1.2</span>
+  <span class="tb-sep">·</span>
+  <span class="tb-title">Down Under Conversion</span>
+</div>
+
+<header>
+  <div class="logo-row" onclick="reopenSplash()" style="cursor:pointer;" title="Show splash">
+    <span class="boomerang">🪃</span>
+    <div>
+      <h1>Down Under Conversion</h1>
+      <p class="tagline">Flip je woorden · G'day van beneden</p>
+    </div>
+  </div>
+  <div id="headerControls" style="display:flex;gap:0.35rem;align-items:center;flex-shrink:0;">
+    <button class="lang-btn" id="langBtn" onclick="cycleLang()" title="Taal wisselen">🇳🇱</button>
+<button id="miniBtn" onclick="toggleMini()" title="Mini modus">⬆️</button>
+<button id="splitHelpBtn" onclick="openSplitHelp()" title="Split screen help">🪟</button>
+    <button id="themeBtn" onclick="toggleTheme()">☀️</button>
+  </div>
+</header>
+
+<!-- ACTION ROW: normal=below panels, mini=inside header via JS -->
+<div class="action-row" id="actionRow">
+  <button class="btn-clear" onclick="clearAll()"><span class="btn-icon">🗑</span><span class="btn-label">Clear</span></button>
+  <button class="btn-copy" id="copyBtn" onclick="copyText()" disabled><span class="btn-icon">📋</span><span class="btn-label">Copy</span></button>
+  <button class="btn-wa"   id="waBtn"   onclick="sendWhatsApp()" disabled>
+    <svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+    <span class="btn-label">Send</span>
+  </button>
+  <button class="btn-wa" id="gifBtn" onclick="sendGif()" disabled style="background:#7c3aed;">
+    <span class="btn-icon">🎞</span><span class="btn-label">GIF</span>
+  </button>
+</div>
+
+<!-- MODE TOGGLES -->
+<div class="mode-row" id="modeRow">
+  <button class="mode-btn active" id="modeReverse" onclick="setMode('reverse')" title="Omdraaien">
+    🔄 Reverse
+  </button>
+  <div class="translate-wrap" id="secretWrap">
+    <button class="mode-btn" id="modeSecret" onclick="setMode('secret')" title="Geheim">
+      🔐 Secret
+    </button>
+    <button class="target-lang-btn" id="scrambleModeBtn" onclick="toggleScrambleMode()" title="Static / Dynamic">⚡</button>
+  </div>
+  <div class="translate-wrap">
+    <button class="mode-btn" id="modeTranslate" onclick="setMode('translate')" title="Vertalen">
+      🌐 Translate
+    </button>
+    <button class="target-lang-btn" id="targetLangBtn" onclick="openLangPicker()" title="Target language">🇦🇺</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- PANELS SIDE BY SIDE (mini) or stacked (normal) -->
+  <div class="panels-row">
+
+    <!-- INPUT -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-lbl">Jouw bericht</span>
+        <span class="char-count" id="charCount">0</span>
+      </div>
+      <span class="panel-lbl-float">Jouw bericht</span>
+      <textarea id="input" placeholder="Typ hier..." oninput="onInput()"></textarea>
+      <div class="input-icons">
+        <button type="button" class="input-icon" id="inputKeyboardBtn" onclick="focusInputKeyboard()" title="Toetsenbord">⌨️</button>
+        <button type="button" class="input-icon mic" id="inputMicBtn" onclick="focusInputKeyboard()" title="Toetsenbord (gebruik het microfoontje van je toetsenbord voor spraak)">
+          <svg width="11" height="13" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="0" width="6" height="12" rx="3" fill="white"/>
+            <path d="M1 9a6 6 0 0 0 12 0" stroke="white" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+            <line x1="7" y1="15" x2="7" y2="18" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="4" y1="18" x2="10" y2="18" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="out-wrap" style="align-items:flex-end;padding:0;flex:1;min-width:0;">
+      <div id="output" class="output-text empty" onclick="outputClicked()">Verschijnt automatisch</div>
+    </div>
+
+  </div>
+
+  <!-- CONTACTS -->
+  <p class="section-lbl hide-mini">Contacten</p>
+  <div class="contacts-bar" id="contactsBar">
+    <button class="btn-add-contact hide-mini" onclick="promptAddContact()">＋ Nieuw</button>
+  </div>
+
+  <!-- PHONE -->
+  <div class="phone-row hide-mini">
+    <input type="tel" id="phone" placeholder="+61 4xx xxx xxx (optioneel)" oninput="deselectChip()" />
+    <button class="btn-save" onclick="saveCurrentContact()" title="Sla contact op">💾</button>
+  </div>
+
+</main>
+
+
+
+<div id="toast"></div>
+
+<!-- GIF SPEED PICKER MODAL -->
+<div id="gifSpeedModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:400;align-items:center;justify-content:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.4rem 1rem;width:min(88vw,300px);display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.35);">
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.06em;color:var(--gold);">🎞 GIF SPEED</span>
+      <button onclick="closeSpeedModal()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--sub);min-width:44px;min-height:44px;touch-action:manipulation;">✕</button>
+    </div>
+    <p style="font-size:0.68rem;color:var(--sub);font-family:'IBM Plex Mono',monospace;text-align:center;line-height:1.5;">How fast should the scramble animate?</p>
+    <div style="display:flex;gap:0.5rem;width:100%;justify-content:center;">
+      <button onclick="pickSpeed(1)" class="speed-opt-btn" data-speed="1" title="Slowest">🐢<br><span>1</span></button>
+      <button onclick="pickSpeed(2)" class="speed-opt-btn" data-speed="2" title="Slow">🦎<br><span>2</span></button>
+      <button onclick="pickSpeed(3)" class="speed-opt-btn" data-speed="3" title="Medium">⚡<br><span>3</span></button>
+      <button onclick="pickSpeed(4)" class="speed-opt-btn" data-speed="4" title="Fast">🚀<br><span>4</span></button>
+      <button onclick="pickSpeed(5)" class="speed-opt-btn" data-speed="5" title="Fastest">🔥<br><span>5</span></button>
+    </div>
+    <p style="font-size:0.58rem;color:var(--sub);font-family:'IBM Plex Mono',monospace;text-align:center;opacity:0.7;">Tap a speed to build your GIF</p>
+  </div>
+</div>
+
+<!-- GIF PREVIEW MODAL -->
+<div id="gifModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem;width:min(90vw,340px);display:flex;flex-direction:column;align-items:center;gap:0.75rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.06em;color:var(--gold);">🎞 SCRAMBLE GIF</span>
+      <button onclick="closeGifModal()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--sub);min-width:44px;min-height:44px;touch-action:manipulation;">✕</button>
+    </div>
+    <div id="gifStatus" style="font-size:0.75rem;color:var(--sub);font-family:'IBM Plex Mono',monospace;width:100%;text-align:center;">Starting…</div>
+    <div style="width:100%;background:var(--border);border-radius:999px;height:6px;overflow:hidden;">
+      <div id="gifProgressBar" style="height:100%;width:0%;background:var(--gold);border-radius:999px;transition:width 0.1s;"></div>
+    </div>
+    <img id="gifPreview" style="display:none;max-width:100%;border-radius:8px;border:1px solid var(--border);" />
+    <div id="gifActions" style="display:none;flex-direction:column;gap:0.5rem;width:100%;">
+      <!-- Step 1: Save GIF to Photos -->
+      <button id="gifStep1Btn" onclick="gifStep1()" style="width:100%;background:var(--gold);color:#fff;border:none;border-radius:10px;padding:0.75rem;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;min-height:48px;touch-action:manipulation;">
+        ⬇ Stap 1 — Sla GIF op
+      </button>
+      <!-- Step 2: Open WhatsApp (hidden until step 1 done) -->
+      <button id="gifStep2Btn" onclick="gifStep2()" style="display:none;width:100%;background:#25d366;color:#fff;border:none;border-radius:10px;padding:0.75rem;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:0.82rem;cursor:pointer;align-items:center;justify-content:center;gap:0.5rem;min-height:48px;touch-action:manipulation;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        Stap 2 — Open WhatsApp
+      </button>
+    </div>
+    <p id="gifHint" style="display:none;font-size:0.6rem;color:var(--sub);text-align:center;line-height:1.4;"></p>
+  </div>
+</div>
+
+<!-- LANG PICKER -->
+<div id="langPicker" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem;width:min(88vw,320px);box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.06em;color:var(--gold);">🌐 TARGET LANGUAGE</span>
+      <button onclick="closeLangPicker()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--sub);">✕</button>
+    </div>
+    <div id="langPickerGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;"></div>
+  </div>
+</div>
+
+<!-- SPLIT SCREEN HELP MODAL -->
+<div id="splitHelpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:250;align-items:center;justify-content:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1rem;width:min(90vw,340px);max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+      <span id="splitHelpTitle" style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.06em;color:var(--gold);">🪟 SPLIT SCREEN</span>
+      <button onclick="closeSplitHelp()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--sub);min-width:44px;min-height:44px;touch-action:manipulation;">✕</button>
+    </div>
+    <div id="splitHelpBody" style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--text);line-height:1.6;"></div>
+  </div>
+</div>
+
+<script>
+// ── Safe storage (falls back to in-memory when localStorage is blocked,
+// e.g. iOS Safari on file:// origins — prevents the whole script from
+// crashing on load, which was causing the splash screen to stall) ──
+const safeStorage = (function() {
+  try {
+    const testKey = '__duc_test__';
+    window.localStorage.setItem(testKey, '1');
+    window.localStorage.removeItem(testKey);
+    return window.localStorage;
+  } catch (e) {
+    const mem = {};
+    return {
+      getItem: (k) => (k in mem ? mem[k] : null),
+      setItem: (k, v) => { mem[k] = String(v); },
+      removeItem: (k) => { delete mem[k]; }
+    };
+  }
+})();
+
+// ── Theme ──
+const savedTheme = safeStorage.getItem('duc_theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+document.getElementById('themeBtn').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  document.getElementById('themeBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+  safeStorage.setItem('duc_theme', next);
+}
+
+function toggleMini() {
+  const isMini = document.body.classList.toggle('mini');
+  document.getElementById('miniBtn').textContent = isMini ? '⬇️' : '⬆️';
+  safeStorage.setItem('duc_mini', isMini ? '1' : '0');
+  relocateActionRow(isMini);
+}
+
+function relocateActionRow(isMini) {
+  const row = document.getElementById('actionRow');
+  const header = document.querySelector('header');
+  const mainEl = document.querySelector('main');
+  if (isMini) {
+    header.insertBefore(row, document.getElementById('headerControls'));
+  } else {
+    mainEl.insertBefore(row, mainEl.firstChild);
+  }
+}
+
+if (safeStorage.getItem('duc_mini') === '1') {
+  document.body.classList.add('mini');
+  document.getElementById('miniBtn').textContent = '⬇️';
+  relocateActionRow(true);
+}
+
+// ── Language + Translations ──
+const LANGS = [
+  { flag: '🇳🇱', code: 'nl' },
+  { flag: '🇬🇧', code: 'en' },
+  { flag: '🇶🇦', code: 'ar' },
+  { flag: '🇨🇳', code: 'zh' },
+];
+let langIdx = parseInt(safeStorage.getItem('duc_lang') || '0');
+
+// ── Target language (for translation) ──
+const TARGET_LANGS = [
+  { flag: '🇦🇺', code: 'en', name: 'English' },
+  { flag: '🇳🇱', code: 'nl', name: 'Dutch' },
+  { flag: '🇩🇪', code: 'de', name: 'German' },
+  { flag: '🇫🇷', code: 'fr', name: 'French' },
+  { flag: '🇪🇸', code: 'es', name: 'Spanish' },
+  { flag: '🇵🇹', code: 'pt', name: 'Portuguese' },
+  { flag: '🇮🇹', code: 'it', name: 'Italian' },
+  { flag: '🇶🇦', code: 'ar', name: 'Arabic' },
+  { flag: '🇨🇳', code: 'zh', name: 'Chinese' },
+  { flag: '🇯🇵', code: 'ja', name: 'Japanese' },
+  { flag: '🇰🇷', code: 'ko', name: 'Korean' },
+  { flag: '🇮🇩', code: 'id', name: 'Indonesian' },
+];
+let targetLangIdx = parseInt(safeStorage.getItem('duc_target_lang') || '0');
+
+function openLangPicker() {
+  const grid = document.getElementById('langPickerGrid');
+  grid.innerHTML = '';
+  TARGET_LANGS.forEach((lang, i) => {
+    const btn = document.createElement('button');
+    const isActive = i === targetLangIdx;
+    btn.style.cssText = `display:flex;flex-direction:column;align-items:center;gap:0.2rem;padding:0.55rem 0.3rem;border-radius:10px;border:2px solid ${isActive ? 'var(--gold)' : 'var(--border)'};background:${isActive ? 'rgba(200,168,75,0.15)' : 'var(--bg)'};cursor:pointer;transition:all 0.12s;`;
+    btn.innerHTML = `<span style="font-size:1.6rem;line-height:1;">${lang.flag}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:${isActive ? 'var(--gold)' : 'var(--sub)'};font-weight:600;">${lang.name}</span>`;
+    btn.onclick = () => selectTargetLang(i);
+    grid.appendChild(btn);
+  });
+  document.getElementById('langPicker').style.display = 'flex';
+}
+
+function selectTargetLang(i) {
+  targetLangIdx = i;
+  safeStorage.setItem('duc_target_lang', targetLangIdx);
+  document.getElementById('targetLangBtn').textContent = TARGET_LANGS[targetLangIdx].flag;
+  applyTranslations();
+  if (activeModes.includes('translate')) onInput();
+  closeLangPicker();
+}
+
+function closeLangPicker() {
+  document.getElementById('langPicker').style.display = 'none';
+}
+
+document.getElementById('langPicker').addEventListener('click', function(e) {
+  if (e.target === this) closeLangPicker();
+});
+
+// ── Split screen help ──
+function detectPlatform() {
+  const ua = navigator.userAgent || '';
+  const uaData = navigator.userAgentData;
+  if (uaData && uaData.platform) {
+    const p = uaData.platform.toLowerCase();
+    if (p.includes('android')) return 'android';
+  }
+  if (/Android/i.test(ua)) return 'android';
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+  // Uncertain (desktop or unrecognized UA) — show both
+  return 'both';
+}
+
+function splitAnimHTML(tx) {
+  const c = tx.splitAnimCaptions;
+  return `
+  <div class="split-phone">
+    <div class="split-scene s1">
+      <span class="split-icon-big">🪃</span>
+      <span class="split-caption">${c[0]}</span>
+    </div>
+    <div class="split-scene s2">
+      <div class="split-card-stack">
+        <div class="split-card">🪃</div>
+        <div class="split-card">💬</div>
+      </div>
+      <span class="split-caption">${c[1]}</span>
+    </div>
+    <div class="split-scene s3">
+      <div class="split-half top">🪃</div>
+      <div class="split-half bottom" style="opacity:0.4;">💬</div>
+      <span class="split-caption">${c[2]}</span>
+    </div>
+    <div class="split-scene s4">
+      <div class="split-half top">🪃</div>
+      <div class="split-half bottom">💬</div>
+      <span class="split-caption">${c[3]}</span>
+    </div>
+    <div class="split-finger"></div>
+  </div>`;
+}
+
+function renderSplitHelp() {
+  const tx = tr();
+  document.getElementById('splitHelpTitle').textContent = tx.splitHelpTitle;
+  const platform = detectPlatform();
+  const androidBlock = `
+    <div style="margin-bottom:${platform === 'both' ? '0.9rem' : '0'};">
+      ${platform === 'both' ? `<div style="font-weight:600;color:var(--gold);margin-bottom:0.35rem;">${tx.splitAndroidLbl}</div>` : ''}
+      ${splitAnimHTML(tx)}
+      <ol style="margin:0;padding-left:1.1rem;">
+        ${tx.splitAndroidSteps.map(s => `<li style="margin-bottom:0.3rem;">${s}</li>`).join('')}
+      </ol>
+    </div>`;
+  const iosBlock = `
+    <div>
+      ${platform === 'both' ? `<div style="font-weight:600;color:var(--gold);margin-bottom:0.35rem;">${tx.splitIosLbl}</div>` : ''}
+      <p style="margin:0 0 0.6rem;">${tx.splitIosNote}</p>
+      <button onclick="sendWhatsApp(); closeSplitHelp();" style="width:100%;background:#25d366;color:#fff;border:none;border-radius:10px;padding:0.6rem;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:0.78rem;cursor:pointer;min-height:44px;touch-action:manipulation;">${tx.splitOpenWa}</button>
+    </div>`;
+  let html = '';
+  if (platform === 'android') html = androidBlock;
+  else if (platform === 'ios') html = iosBlock;
+  else html = androidBlock + iosBlock;
+  document.getElementById('splitHelpBody').innerHTML = html;
+}
+
+function openSplitHelp() {
+  renderSplitHelp();
+  document.getElementById('splitHelpModal').style.display = 'flex';
+}
+
+function closeSplitHelp() {
+  document.getElementById('splitHelpModal').style.display = 'none';
+}
+
+document.getElementById('splitHelpModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSplitHelp();
+});
+
+document.getElementById('targetLangBtn').textContent = TARGET_LANGS[targetLangIdx].flag;
+
+const TR = {
+  nl: {
+    inputLabel:'Jouw bericht', placeholder:'Typ hier...', outputEmpty:'Verschijnt automatisch',
+    clearBtn:'🗑 Clear', copyBtn:'📋 Copy', contacts:'Contacten', addContact:'＋ Nieuw',
+    phonePH:'+61 4xx xxx xxx (optioneel)', tagline:"Flip je woorden · G'day van beneden",
+    modeReverse:'🔄 Omdraaien', modeSecret:'🔐 Geheim', modeTranslate:'🌐 Vertalen',
+    outReverse:(f)=>`Omgedraaid ${f}`, outSecret:'Geheim 🔐', outTranslate:(f)=>`Vertaling ${f}`,
+    translateHint:'👆 Klik om te vertalen',
+    splitHelpTitle:'🪟 SPLITSCHERM',
+    splitAndroidLbl:'Android', splitIosLbl:'iPhone',
+    splitAndroidSteps:['Open WhatsApp alvast (optioneel)','Veeg omhoog en houd vast om Recente apps te openen','Houd het icoon van deze app bovenaan ingedrukt → Splitscherm','Kies WhatsApp voor de onderste helft'],
+    splitIosNote:'iPhone ondersteunt geen echt splitscherm (behalve op sommige iPads). Gebruik onderstaande knop om direct naar WhatsApp te gaan.',
+    splitAnimCaptions:['Deze app is open','Open Recente apps','Sleep naar boven','Kies WhatsApp onderin'],
+    splitOpenWa:'📱 Open WhatsApp',
+  },
+  en: {
+    inputLabel:'Your message', placeholder:'Type here...', outputEmpty:'Appears automatically',
+    clearBtn:'🗑 Clear', copyBtn:'📋 Copy', contacts:'Contacts', addContact:'＋ New',
+    phonePH:'+61 4xx xxx xxx (optional)', tagline:"Flip your words · G'day from below",
+    modeReverse:'🔄 Reverse', modeSecret:'🔐 Secret', modeTranslate:'🌐 Translate',
+    outReverse:(f)=>`Reversed ${f}`, outSecret:'Secret 🔐', outTranslate:(f)=>`Translation ${f}`,
+    translateHint:'👆 Click to translate',
+    splitHelpTitle:'🪟 SPLIT SCREEN',
+    splitAndroidLbl:'Android', splitIosLbl:'iPhone',
+    splitAndroidSteps:['Open WhatsApp first (optional)','Swipe up and hold to open Recent Apps','Long-press this app\'s icon at the top → Split screen','Pick WhatsApp for the bottom half'],
+    splitIosNote:'iPhone doesn\'t support true split screen (except on some iPads). Use the button below to jump straight into WhatsApp.',
+    splitAnimCaptions:['This app is open','Open Recent Apps','Drag to the top','Pick WhatsApp below'],
+    splitOpenWa:'📱 Open WhatsApp',
+  },
+  ar: {
+    inputLabel:'رسالتك', placeholder:'اكتب هنا...', outputEmpty:'يظهر تلقائيًا',
+    clearBtn:'🗑 مسح', copyBtn:'📋 نسخ', contacts:'جهات الاتصال', addContact:'＋ جديد',
+    phonePH:'+974 xxxx xxxx (اختياري)', tagline:"اقلب كلماتك · مرحباً من الأسفل",
+    modeReverse:'🔄 عكس', modeSecret:'🔐 سري', modeTranslate:'🌐 ترجمة',
+    outReverse:(f)=>`مقلوب ${f}`, outSecret:'سري 🔐', outTranslate:(f)=>`ترجمة ${f}`,
+    translateHint:'👆 انقر للترجمة',
+    splitHelpTitle:'🪟 تقسيم الشاشة',
+    splitAndroidLbl:'أندرويد', splitIosLbl:'آيفون',
+    splitAndroidSteps:['افتح واتساب أولاً (اختياري)','اسحب لأعلى واستمر بالضغط لفتح التطبيقات الأخيرة','اضغط مطولاً على أيقونة هذا التطبيق أعلاه ← تقسيم الشاشة','اختر واتساب للنصف السفلي'],
+    splitIosNote:'لا يدعم الآيفون تقسيم الشاشة الحقيقي (إلا في بعض أجهزة آيباد). استخدم الزر أدناه للانتقال مباشرة إلى واتساب.',
+    splitAnimCaptions:['هذا التطبيق مفتوح','افتح التطبيقات الأخيرة','اسحب لأعلى','اختر واتساب أدناه'],
+    splitOpenWa:'📱 افتح واتساب',
+  },
+  zh: {
+    inputLabel:'你的消息', placeholder:'在这里输入...', outputEmpty:'自动显示',
+    clearBtn:'🗑 清除', copyBtn:'📋 复制', contacts:'联系人', addContact:'＋ 新建',
+    phonePH:'+86 xxx xxxx xxxx（可选）', tagline:"翻转你的文字 · 来自下方的问候",
+    modeReverse:'🔄 翻转', modeSecret:'🔐 加密', modeTranslate:'🌐 翻译',
+    outReverse:(f)=>`翻转 ${f}`, outSecret:'加密 🔐', outTranslate:(f)=>`翻译 ${f}`,
+    translateHint:'👆 点击翻译',
+    splitHelpTitle:'🪟 分屏',
+    splitAndroidLbl:'安卓', splitIosLbl:'iPhone',
+    splitAndroidSteps:['先打开WhatsApp（可选）','上滑并按住以打开最近使用的应用','长按顶部本应用图标 → 分屏','为下半部分选择WhatsApp'],
+    splitIosNote:'iPhone不支持真正的分屏（部分iPad除外）。点击下方按钮直接打开WhatsApp。',
+    splitAnimCaptions:['此应用已打开','打开最近使用的应用','拖到顶部','在下方选择WhatsApp'],
+    splitOpenWa:'📱 打开WhatsApp',
+  },
+};
+
+function tr() { return TR[LANGS[langIdx].code] || TR.nl; }
+function curFlag() { return LANGS[langIdx].flag; }
+
+function cycleLang() {
+  langIdx = (langIdx + 1) % LANGS.length;
+  safeStorage.setItem('duc_lang', langIdx);
+  document.getElementById('langBtn').textContent = curFlag();
+  applyTranslations();
+  onInput();
+}
+document.getElementById('langBtn').textContent = curFlag();
+
+function applyTranslations() {
+  const tx = tr();
+  document.querySelector('.tagline').textContent = tx.tagline;
+  document.querySelectorAll('.panel-lbl').forEach(el => {
+    if (el.id !== 'outputLabel') el.textContent = tx.inputLabel;
+  });
+  document.querySelectorAll('.panel-lbl-float').forEach(el => {
+    if (el.id !== 'outputLabelFloat') el.textContent = tx.inputLabel;
+  });
+  document.getElementById('input').placeholder = tx.placeholder;
+  document.querySelector('.section-lbl').textContent = tx.contacts;
+  document.querySelector('.btn-add-contact').textContent = tx.addContact;
+  document.getElementById('phone').placeholder = tx.phonePH;
+  document.querySelector('#copyBtn .btn-label').textContent = tx.copyBtn.replace(/^\S+\s*/, '');
+  document.querySelector('.btn-clear .btn-label').textContent = tx.clearBtn.replace(/^\S+\s*/, '');
+  document.getElementById('modeReverse').textContent = tx.modeReverse;
+  document.getElementById('modeSecret').textContent = tx.modeSecret;
+  document.getElementById('modeTranslate').textContent = tx.modeTranslate;
+  if (document.getElementById('splitHelpModal').style.display === 'flex') renderSplitHelp();
+  let lbl;
+  if (activeModes.includes('translate'))     lbl = tx.outTranslate(TARGET_LANGS[targetLangIdx].flag);
+  else if (activeModes.includes('secret') && activeModes.includes('reverse')) lbl = `${tx.outReverse(curFlag())} + ${tx.outSecret}`;
+  else if (activeModes.includes('secret'))   lbl = tx.outSecret;
+  else if (activeModes.includes('reverse'))  lbl = tx.outReverse(curFlag());
+  else                                       lbl = tx.outputEmpty;
+  const olEl = document.getElementById('outputLabel');
+  const olfEl = document.getElementById('outputLabelFloat');
+  if (olEl) olEl.textContent = lbl;
+  if (olfEl) olfEl.textContent = lbl;
+  const out = document.getElementById('output');
+  if (out.classList.contains('empty')) out.textContent = tx.outputEmpty;
+}
+
+// ── Mode (multi-select) ──
+let activeModes = JSON.parse(safeStorage.getItem('duc_modes') || '["reverse"]');
+
+function setMode(mode) {
+  const idx = activeModes.indexOf(mode);
+  if (idx === -1) activeModes.push(mode);
+  else activeModes.splice(idx, 1);
+  safeStorage.setItem('duc_modes', JSON.stringify(activeModes));
+  document.getElementById('mode' + mode.charAt(0).toUpperCase() + mode.slice(1))
+    .classList.toggle('active', activeModes.includes(mode));
+  // Highlight target-lang-btn when translate is active
+  const wrap = document.getElementById('modeTranslate').closest('.translate-wrap');
+  if (wrap) wrap.classList.toggle('translate-active', activeModes.includes('translate'));
+  if (!activeModes.includes('secret')) stopScrambleAnim();
+  applyTranslations();
+  onInput();
+  updateGifBtn();
+  updateScrambleModeBtn();
+}
+
+// ── Flip map ──
+const FM = {
+  a:'ɐ',b:'q',c:'ɔ',d:'p',e:'ǝ',f:'ɟ',g:'ƃ',h:'ɥ',i:'ᴉ',j:'ɾ',k:'ʞ',l:'l',
+  m:'ɯ',n:'u',o:'o',p:'d',q:'b',r:'ɹ',s:'s',t:'ʇ',u:'n',v:'ʌ',w:'ʍ',x:'x',y:'ʎ',z:'z',
+  A:'∀',B:'ᗺ',C:'Ɔ',D:'ᗡ',E:'Ǝ',F:'Ⅎ',G:'⅁',H:'H',I:'I',J:'ſ',K:'ʞ',L:'⅂',
+  M:'W',N:'ᴎ',O:'O',P:'Ԁ',Q:'Ό',R:'ᴚ',S:'S',T:'ʇ',U:'∩',V:'Λ',W:'M',X:'X',Y:'⅄',Z:'Z',
+  '0':'0','1':'Ɩ','2':'ᄅ','3':'Ɛ','4':'ㄣ','5':'ϛ','6':'9','7':'ㄥ','8':'8','9':'6',
+  '.':'˙',',':'\'','\'':',','!':'¡','?':'¿','(':')',')':'(','[':']',']':'[',
+  '{':'}','}':'{','<':'>','>':'<','&':'⅋','_':'‾','^':'v','"':'„'
+};
+const flipStr = s => s.split('').reverse().map(c => FM[c]||c).join('');
+
+function shuffleArr(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function scrambleWord(word) {
+  if (word.length <= 2) return word;
+  // 3 letters: guaranteed swap of positions 2 and 3
+  if (word.length === 3) return word[0] + word[2] + word[1];
+  // First + last fixed, shuffle middle — retry until different from original
+  const first = word[0];
+  const last  = word[word.length - 1];
+  const origMiddle = word.slice(1, -1);
+  const middle = origMiddle.split('');
+  // If all middle chars are identical, no shuffle possible
+  if (middle.every(c => c === middle[0])) return word;
+  let attempt, tries = 0;
+  do {
+    shuffleArr(middle);
+    attempt = middle.join('');
+    tries++;
+  } while (attempt === origMiddle && tries < 30);
+  return first + attempt + last;
+}
+
+function scrambleStr(s) {
+  return s.split(' ').map(scrambleWord).join(' ');
+}
+
+// ── Unicode confusable map for persistent scramble in WhatsApp ──
+const CONFUSABLES = {
+  a:['ɑ','а','ạ','ă','ȧ','ä','â','à','á','ā'],
+  b:['Ƅ','ɓ','ƃ','б'],
+  c:['ϲ','с','ƈ','ċ','ç'],
+  d:['ԁ','ɗ','đ','ď'],
+  e:['е','ė','ę','ě','ȩ','ë','ê','é','è'],
+  f:['ƒ','ẝ'],
+  g:['ɡ','ǵ','ġ','ĝ','ğ'],
+  h:['һ','ħ','ĥ'],
+  i:['і','ɪ','ï','î','ì','í','ī','ĭ'],
+  j:['ϳ','ĵ','ɉ'],
+  k:['ƙ','ķ','κ'],
+  l:['ӏ','ļ','ľ','ĺ'],
+  m:['ṃ','ɱ','м'],
+  n:['ո','ñ','ņ','ń','ň'],
+  o:['о','ο','ȯ','ö','ô','ò','ó','ō','ŏ'],
+  p:['р','ρ','ƿ','ƥ'],
+  q:['ԛ','ɋ'],
+  r:['г','ɾ','ŗ','ř','ŕ'],
+  s:['ѕ','ș','ş','š','ś'],
+  t:['τ','ţ','ť','ț'],
+  u:['υ','ü','û','ù','ú','ū','ŭ'],
+  v:['ν','ʋ','ѵ'],
+  w:['ѡ','ŵ','ẇ'],
+  x:['х','χ','ẋ'],
+  y:['у','ý','ÿ','ŷ'],
+  z:['ƶ','ż','ž','ź'],
+  A:['Α','А','Ä','Â','À','Á','Ā'],
+  B:['В','Β','Ɓ'],
+  C:['С','Ϲ','Ć','Č'],
+  D:['Ď','Đ'],
+  E:['Е','Ε','Ë','Ê','È','É'],
+  F:['Ƒ'],
+  G:['Ġ','Ĝ','Ğ'],
+  H:['Η','Н','Ħ','Ĥ'],
+  I:['І','Ι','Ï','Î','Ì','Í','Ī'],
+  J:['Ĵ'],
+  K:['Κ','Қ','Ķ'],
+  L:['Ļ','Ľ','Ĺ'],
+  M:['Μ','М'],
+  N:['Ν','Ñ','Ņ','Ń','Ň'],
+  O:['О','Ο','Ö','Ô','Ò','Ó','Ō'],
+  P:['Р','Ρ','Ƥ'],
+  Q:['Ԛ'],
+  R:['Ř','Ŗ','Ŕ'],
+  S:['Ѕ','Š','Ś','Ş'],
+  T:['Τ','Т','Ť','Ţ'],
+  U:['Ü','Û','Ù','Ú','Ū'],
+  V:['Ѵ','Ν'],
+  W:['Ŵ'],
+  X:['Х','Χ'],
+  Y:['У','Ý','Ŷ'],
+  Z:['Ž','Ż','Ź'],
+};
+
+function confusableChar(c) {
+  const opts = CONFUSABLES[c];
+  if (!opts) return c;
+  return opts[Math.floor(Math.random() * opts.length)];
+}
+
+// Replace ~60% of letters with confusable Unicode lookalikes
+function persistentScramble(text) {
+  return text.split('').map(c => {
+    if (CONFUSABLES[c] && Math.random() < 0.6) return confusableChar(c);
+    return c;
+  }).join('');
+}
+
+// ── Diacritic variants (shared by live anim + GIF) ──
+const VARIANTS = {
+  a:['á','à','â','ä','ã','å'], b:['b'], c:['ç','ć','č'],
+  d:['d'], e:['é','è','ê','ë','ě'],
+  g:['ğ'], h:['h'], i:['í','ì','î','ï'],
+  j:['j'], k:['k'], l:['ĺ','ļ'], m:['m'],
+  n:['ñ','ń','ň'], o:['ó','ò','ô','ö','õ'], p:['p'],
+  q:['q'], r:['ř'], s:['š','ś','ş'], t:['ţ'],
+  u:['ú','ù','û','ü','ů'], v:['v'], w:['ŵ'],
+  x:['x'], y:['ý','ÿ'], z:['ž','ź','ż'],
+  A:['Á','À','Â','Ä','Ã','Å'], B:['B'], C:['Ç','Ć','Č'],
+  D:['D'], E:['É','È','Ê','Ë','Ě'],
+  G:['Ğ'], H:['H'], I:['Í','Ì','Î','Ï'],
+  J:['J'], K:['K'], L:['Ĺ','Ļ'], M:['M'],
+  N:['Ñ','Ń','Ň'], O:['Ó','Ò','Ô','Ö','Õ'], P:['P'],
+  R:['Ř'], S:['Š','Ś','Ş'], T:['Ţ'],
+  U:['Ú','Ù','Û','Ü','Ů'], W:['Ŵ'], Y:['Ý'], Z:['Ž','Ź','Ż'],
+};
+function variantOf(c) {
+  const opts = VARIANTS[c];
+  return opts && opts.length ? opts[Math.floor(Math.random() * opts.length)] : c;
+}
+
+// Shared: build segments for a text string (used by anim + GIF)
+function buildSegments(text) {
+  const segments = [];
+  const tokens = text.split(/(\s+)/);
+  for (const token of tokens) {
+    if (!token) continue;
+    if (/^\s+$/.test(token)) { segments.push({ type: 'space', text: token }); continue; }
+    if (token.length === 1)  { segments.push({ type: 'word', first: token, middle: [], last: '' }); continue; }
+    if (token.length === 2)  { segments.push({ type: 'word', first: token[0], middle: [], last: token[1] }); continue; }
+    segments.push({ type: 'word', first: token[0], middle: token.slice(1,-1).split(''), last: token[token.length-1] });
+  }
+  return segments;
+}
+
+function scrambleSegments(segments) {
+  return segments.map(seg => {
+    if (seg.type === 'space') return seg.text;
+    const mid = [...seg.middle];
+    for (let i = mid.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [mid[i], mid[j]] = [mid[j], mid[i]];
+    }
+    return seg.first + mid.map(c => Math.random() < 0.4 ? variantOf(c) : c).join('') + seg.last;
+  }).join('');
+}
+
+// ── State ──
+let processed = '';
+let contacts = JSON.parse(safeStorage.getItem('duc_contacts') || '[]');
+let translateTimer = null;
+let scrambleAnimTimer = null;
+
+// ── Dynamic scramble animation ──
+const SCRAMBLE_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&';
+
+function stopScrambleAnim() {
+  if (scrambleAnimTimer) { clearInterval(scrambleAnimTimer); scrambleAnimTimer = null; }
+}
+
+function startScrambleAnim(baseText) {
+  stopScrambleAnim();
+  const out = document.getElementById('output');
+  out.classList.remove('empty');
+  out.style.color = 'var(--green)';
+  const segments = buildSegments(baseText);
+  scrambleAnimTimer = setInterval(() => {
+    out.textContent = scrambleSegments(segments);
+  }, 100);
+}
+
+function applyTransformations(text, forSend = false) {
+  let result = text;
+  if (activeModes.includes('reverse')) result = flipStr(result);
+  if (activeModes.includes('secret')) {
+    result = scrambleStr(result);
+    // For actual sending: apply Unicode confusables so it stays scrambled in WhatsApp
+    if (forSend) result = persistentScramble(result);
+  }
+  return result || text;
+}
+
+async function translateText(text, targetLang) {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang.code}&dt=t&q=${encodeURIComponent(text)}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('Translation failed');
+  const data = await resp.json();
+  // Response is nested arrays: [[["translated","original",...],...],...]
+  const translated = data[0].map(chunk => chunk[0]).join('');
+  if (!translated) throw new Error('Empty translation');
+  return translated.trim();
+}
+
+// ── Output alignment: right when reverse is active, left otherwise ──
+function updateOutputAlignment() {
+  const out = document.getElementById('output');
+  const isReversed = activeModes.includes('reverse');
+  out.style.textAlign = isReversed ? 'right' : 'left';
+}
+
+// ── Input ──
+function onInput() {
+  const val = document.getElementById('input').value;
+  document.getElementById('charCount').textContent = val.length;
+  const out = document.getElementById('output');
+
+  updateOutputAlignment();
+
+  if (!val.trim()) {
+    stopScrambleAnim();
+    processed = '';
+    out.textContent = tr().outputEmpty;
+    out.classList.add('empty');
+    setButtons(false);
+    return;
+  }
+
+  if (activeModes.includes('translate')) {
+    stopScrambleAnim();
+    out.textContent = tr().translateHint;
+    out.classList.remove('empty');
+    out.classList.add('translate-pending');
+    out.style.color = 'var(--sub)';
+    processed = '';
+    setButtons(true);
+    return;
+  }
+
+  out.classList.remove('translate-pending');
+
+  processed = applyTransformations(val);
+
+  if (activeModes.includes('secret') && scrambleDynamic) {
+    startScrambleAnim(processed);
+  } else {
+    stopScrambleAnim();
+    out.textContent = processed;
+    out.classList.remove('empty');
+    out.style.color = 'var(--green)';
+  }
+  setButtons(true);
+  updateGifBtn();
+  updateScrambleModeBtn();
+}
+
+// ── Clipboard ──
+async function copyText() {
+  stopScrambleAnim();
+  const text = await resolveProcessed(true);
+  if (!text) return;
+  doClipboard(text, true);
+}
+
+function doClipboard(text, notify) {
+  const rtlText = activeModes.includes('reverse') ? '\u200F' + text : text;
+  const done = () => {
+    if (notify) showToast('Gekopieerd ✓');
+    if (navigator.vibrate) navigator.vibrate(35);
+  };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(rtlText).then(done).catch(() => fallbackCopy(rtlText, done));
+  } else {
+    fallbackCopy(rtlText, done);
+  }
+}
+
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e){}
+  document.body.removeChild(ta);
+}
+
+function setButtons(on) {
+  document.getElementById('copyBtn').disabled = !on;
+  document.getElementById('waBtn').disabled = !on;
+}
+
+// ── Shared: resolve final processed text (translating if needed) ──
+async function resolveProcessed(forSend = false) {
+  const val = document.getElementById('input').value.trim();
+  if (!val) return null;
+
+  if (activeModes.includes('translate')) {
+    const out = document.getElementById('output');
+    out.textContent = '⏳ Translating…';
+    out.style.color = 'var(--sub)';
+    try {
+      const targetLang = TARGET_LANGS[targetLangIdx];
+      let translated = await translateText(val, targetLang);
+      translated = applyTransformations(translated, forSend);
+      processed = applyTransformations(translated.replace(/./g, c => {
+        // Strip back to base for display (keep display clean)
+        return c;
+      }));
+      // For display show clean scramble, forSend version goes to clipboard/WA
+      const display = applyTransformations(translated);
+      processed = display;
+      out.textContent = display;
+      out.style.color = 'var(--green)';
+      out.classList.remove('empty');
+      return forSend ? applyTransformations(translated, true) : display;
+    } catch(e) {
+      out.textContent = '⚠️ ' + e.message;
+      out.style.color = 'var(--red)';
+      return null;
+    }
+  } else {
+    if (forSend && activeModes.includes('secret')) {
+      return persistentScramble(processed);
+    }
+    return processed || null;
+  }
+}
+
+// ── Output box click → trigger translation ──
+async function outputClicked() {
+  if (!activeModes.includes('translate')) return;
+  const out = document.getElementById('output');
+  if (!out.classList.contains('translate-pending')) return;
+  out.classList.remove('translate-pending');
+  const text = await resolveProcessed(false);
+  if (text) doClipboard(text, false);
+}
+
+// ── WhatsApp / Send ──
+async function sendWhatsApp() {
+  const text = await resolveProcessed(true);
+  if (!text) return;
+  // Copy to clipboard first, await it, then open WhatsApp
+  await new Promise(resolve => {
+    const done = () => { showToast('Gekopieerd ✓'); if (navigator.vibrate) navigator.vibrate(35); resolve(); };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(done).catch(() => { fallbackCopy(text, done); resolve(); });
+    } else {
+      fallbackCopy(text, done); resolve();
+    }
+  });
+  const phone = document.getElementById('phone').value.replace(/\D/g,'');
+  const rtlText = activeModes.includes('reverse') ? '\u200F' + text : text;
+  const url = phone
+    ? `https://wa.me/${phone}?text=${encodeURIComponent(rtlText)}`
+    : `https://wa.me/?text=${encodeURIComponent(rtlText)}`;
+  window.open(url, '_blank');
+}
+
+// ── Clear ──
+function clearAll() {
+  stopScrambleAnim();
+  document.getElementById('input').value = '';
+  processed = '';
+  const out = document.getElementById('output');
+  out.textContent = tr().outputEmpty;
+  out.classList.add('empty');
+  out.classList.remove('translate-pending');
+  document.getElementById('charCount').textContent = '0';
+  setButtons(false);
+  document.getElementById('phone').value = '';
+  deselectChip();
+}
+
+// ── Contacts ──
+function saveContacts() { safeStorage.setItem('duc_contacts', JSON.stringify(contacts)); }
+
+const PHONE_FLAGS = [
+  { prefix: '+1',   flag: '🇺🇸' },
+  { prefix: '+7',   flag: '🇷🇺' },
+  { prefix: '+20',  flag: '🇪🇬' },
+  { prefix: '+27',  flag: '🇿🇦' },
+  { prefix: '+30',  flag: '🇬🇷' },
+  { prefix: '+31',  flag: '🇳🇱' },
+  { prefix: '+32',  flag: '🇧🇪' },
+  { prefix: '+33',  flag: '🇫🇷' },
+  { prefix: '+34',  flag: '🇪🇸' },
+  { prefix: '+36',  flag: '🇭🇺' },
+  { prefix: '+39',  flag: '🇮🇹' },
+  { prefix: '+40',  flag: '🇷🇴' },
+  { prefix: '+41',  flag: '🇨🇭' },
+  { prefix: '+43',  flag: '🇦🇹' },
+  { prefix: '+44',  flag: '🇬🇧' },
+  { prefix: '+45',  flag: '🇩🇰' },
+  { prefix: '+46',  flag: '🇸🇪' },
+  { prefix: '+47',  flag: '🇳🇴' },
+  { prefix: '+48',  flag: '🇵🇱' },
+  { prefix: '+49',  flag: '🇩🇪' },
+  { prefix: '+51',  flag: '🇵🇪' },
+  { prefix: '+52',  flag: '🇲🇽' },
+  { prefix: '+54',  flag: '🇦🇷' },
+  { prefix: '+55',  flag: '🇧🇷' },
+  { prefix: '+56',  flag: '🇨🇱' },
+  { prefix: '+57',  flag: '🇨🇴' },
+  { prefix: '+58',  flag: '🇻🇪' },
+  { prefix: '+60',  flag: '🇲🇾' },
+  { prefix: '+61',  flag: '🇦🇺' },
+  { prefix: '+62',  flag: '🇮🇩' },
+  { prefix: '+63',  flag: '🇵🇭' },
+  { prefix: '+64',  flag: '🇳🇿' },
+  { prefix: '+65',  flag: '🇸🇬' },
+  { prefix: '+66',  flag: '🇹🇭' },
+  { prefix: '+81',  flag: '🇯🇵' },
+  { prefix: '+82',  flag: '🇰🇷' },
+  { prefix: '+84',  flag: '🇻🇳' },
+  { prefix: '+86',  flag: '🇨🇳' },
+  { prefix: '+90',  flag: '🇹🇷' },
+  { prefix: '+91',  flag: '🇮🇳' },
+  { prefix: '+92',  flag: '🇵🇰' },
+  { prefix: '+94',  flag: '🇱🇰' },
+  { prefix: '+95',  flag: '🇲🇲' },
+  { prefix: '+971', flag: '🇦🇪' },
+  { prefix: '+972', flag: '🇮🇱' },
+  { prefix: '+973', flag: '🇧🇭' },
+  { prefix: '+974', flag: '🇶🇦' },
+  { prefix: '+975', flag: '🇧🇹' },
+  { prefix: '+976', flag: '🇲🇳' },
+  { prefix: '+977', flag: '🇳🇵' },
+  { prefix: '+98',  flag: '🇮🇷' },
+  { prefix: '+212', flag: '🇲🇦' },
+  { prefix: '+213', flag: '🇩🇿' },
+  { prefix: '+216', flag: '🇹🇳' },
+  { prefix: '+218', flag: '🇱🇾' },
+  { prefix: '+234', flag: '🇳🇬' },
+  { prefix: '+254', flag: '🇰🇪' },
+  { prefix: '+255', flag: '🇹🇿' },
+  { prefix: '+256', flag: '🇺🇬' },
+  { prefix: '+880', flag: '🇧🇩' },
+];
+
+function flagForPhone(phone) {
+  if (!phone) return '📞';
+  const normalized = phone.startsWith('+') ? phone : '+' + phone;
+  // Sort by prefix length descending so longer prefixes match first
+  const sorted = [...PHONE_FLAGS].sort((a,b) => b.prefix.length - a.prefix.length);
+  const match = sorted.find(p => normalized.startsWith(p.prefix));
+  return match ? match.flag : '📞';
+}
+
+function renderContacts() {
+  const bar = document.getElementById('contactsBar');
+  bar.querySelectorAll('.contact-chip').forEach(el => el.remove());
+  const addBtn = bar.querySelector('.btn-add-contact');
+  contacts.forEach((c, i) => {
+    const chip = document.createElement('button');
+    chip.className = 'contact-chip';
+    chip.innerHTML = `${flagForPhone(c.phone)} ${c.name}<span class="del" data-i="${i}">✕</span>`;
+    chip.addEventListener('click', e => {
+      if (e.target.classList.contains('del')) deleteContact(i);
+      else selectContact(i, chip);
+    });
+    bar.insertBefore(chip, addBtn);
+  });
+}
+
+function selectContact(i, chip) {
+  document.querySelectorAll('.contact-chip').forEach(c => c.classList.remove('selected'));
+  chip.classList.add('selected');
+  document.getElementById('phone').value = contacts[i].phone;
+}
+
+function deselectChip() {
+  document.querySelectorAll('.contact-chip').forEach(c => c.classList.remove('selected'));
+}
+
+function deleteContact(i) {
+  contacts.splice(i, 1);
+  saveContacts();
+  renderContacts();
+}
+
+function promptAddContact() {
+  const phone = document.getElementById('phone').value.trim();
+  const name = prompt('Naam?');
+  if (!name) return;
+  const num = phone || prompt('Nummer (bijv. +61412345678)?') || '';
+  contacts.push({ name: name.trim(), phone: num.replace(/\s/g,'') });
+  saveContacts();
+  renderContacts();
+  showToast(`${name} opgeslagen ✓`);
+}
+
+function saveCurrentContact() {
+  const phone = document.getElementById('phone').value.trim();
+  if (!phone) { showToast('Voer eerst een nummer in'); return; }
+  const name = prompt('Naam?');
+  if (!name) return;
+  contacts.push({ name: name.trim(), phone: phone.replace(/\s/g,'') });
+  saveContacts();
+  renderContacts();
+  showToast(`${name} opgeslagen ✓`);
+}
+
+// ── Scramble mode: static vs dynamic ──
+let scrambleDynamic = safeStorage.getItem('duc_scramble_dynamic') !== '0'; // default: dynamic
+
+function toggleScrambleMode() {
+  scrambleDynamic = !scrambleDynamic;
+  safeStorage.setItem('duc_scramble_dynamic', scrambleDynamic ? '1' : '0');
+  updateScrambleModeBtn();
+  onInput();
+}
+
+function updateScrambleModeBtn() {
+  const btn = document.getElementById('scrambleModeBtn');
+  if (!btn) return;
+  const secretActive = activeModes.includes('secret');
+  btn.textContent = scrambleDynamic ? '⚡' : '🔒';
+  btn.title = scrambleDynamic ? 'Dynamic (animated)' : 'Static (fixed)';
+  btn.style.borderColor = secretActive ? (scrambleDynamic ? 'var(--gold)' : 'var(--border)') : 'var(--border)';
+  btn.style.background = secretActive && scrambleDynamic ? 'rgba(200,168,75,0.12)' : 'var(--surface)';
+  // Also sync secretWrap highlight
+  const wrap = document.getElementById('secretWrap');
+  if (wrap) wrap.classList.toggle('translate-active', secretActive);
+}
+
+// ── GIF button visibility ──
+function updateGifBtn() {
+  const gifBtn = document.getElementById('gifBtn');
+  const hasText = !!document.getElementById('input').value.trim();
+  gifBtn.style.display = 'flex';
+  gifBtn.disabled = !hasText;
+}
+
+// ── GIF Generation ──
+function closeGifModal() {
+  document.getElementById('gifModal').style.display = 'none';
+}
+document.getElementById('gifModal').addEventListener('click', function(e) {
+  if (e.target === this) closeGifModal();
+});
+
+// ── GIF Speed picker ──
+let _gifSpeedResolve = null;
+
+async function sendGif() {
+  // Resolve text first — triggers translation if needed
+  const base = await resolveProcessed(false);
+  if (!base) return;
+
+  // Show speed picker popup
+  document.getElementById('gifSpeedModal').style.display = 'flex';
+}
+
+function closeSpeedModal() {
+  document.getElementById('gifSpeedModal').style.display = 'none';
+  if (_gifSpeedResolve) { _gifSpeedResolve(null); _gifSpeedResolve = null; }
+}
+
+document.getElementById('gifSpeedModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSpeedModal();
+});
+
+async function pickSpeed(level) {
+  document.getElementById('gifSpeedModal').style.display = 'none';
+  // Speed 1 = slowest (delay 300ms), Speed 5 = fastest (delay 40ms)
+  const delayMap = { 1: 300, 2: 200, 3: 120, 4: 70, 5: 40 };
+  const gifDelay = delayMap[level] || 100;
+  await buildGif(gifDelay);
+}
+
+async function buildGif(gifFrameDelay) {
+  const base = await resolveProcessed(false);
+  if (!base) return;
+
+  const modal = document.getElementById('gifModal');
+  modal.style.display = 'flex';
+  document.getElementById('gifStatus').textContent = 'Building frames…';
+  document.getElementById('gifProgressBar').style.width = '0%';
+  document.getElementById('gifPreview').style.display = 'none';
+  document.getElementById('gifActions').style.display = 'none';
+  document.getElementById('gifHint').style.display = 'none';
+
+  await new Promise(r => setTimeout(r, 30)); // let modal render
+
+  // ── Canvas setup — clean WhatsApp bubble ──
+  const canvas = document.createElement('canvas');
+  const isReverse = activeModes.includes('reverse');
+  const fontSize = 15;
+  const paddingX = 10;
+  const paddingY = 7;
+  const lineH = Math.round(fontSize * 1.45);
+  const maxTextW = 220;
+  const ctx = canvas.getContext('2d');
+  ctx.font = `bold ${fontSize}px -apple-system, Helvetica, Arial, sans-serif`;
+
+  function wrapText(text, maxWidth) {
+    const words = text.split(' ');
+    const lines = []; let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = w; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  const lines = wrapText(base, maxTextW);
+
+  // Hangul filler (U+3164) forces 2 lines so WhatsApp doesn't zoom single-line GIFs.
+  // Reverse: filler goes first (visually at bottom when read upside-down).
+  if (lines.length === 1) {
+    const filler = 'ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ';
+    if (isReverse) lines.unshift(filler);
+    else           lines.push(filler);
+  }
+
+  let maxLineW = 30;
+  for (const l of lines) maxLineW = Math.max(maxLineW, ctx.measureText(l).width);
+
+  const bubbleW = maxLineW + paddingX * 2;
+  const bubbleH = lines.length * lineH + paddingY * 2;
+  const r = 10;
+
+  canvas.width  = bubbleW;
+  canvas.height = bubbleH;
+
+  function drawBubble() {
+    ctx.clearRect(0, 0, bubbleW, bubbleH);
+    ctx.beginPath();
+    ctx.fillStyle = '#dcf8c6';
+    ctx.moveTo(r, 0);
+    ctx.lineTo(bubbleW - r, 0);
+    ctx.quadraticCurveTo(bubbleW, 0, bubbleW, r);
+    ctx.lineTo(bubbleW, bubbleH - r);
+    ctx.quadraticCurveTo(bubbleW, bubbleH, bubbleW - r, bubbleH);
+    ctx.lineTo(r, bubbleH);
+    ctx.quadraticCurveTo(0, bubbleH, 0, bubbleH - r);
+    ctx.lineTo(0, r);
+    ctx.quadraticCurveTo(0, 0, r, 0);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  const lineSegments = lines.map(line => buildSegments(line));
+
+  function renderFrame() {
+    drawBubble();
+    ctx.font = `bold ${fontSize}px -apple-system, Helvetica, Arial, sans-serif`;
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = isReverse ? 'right' : 'left';
+    const xPos = isReverse ? bubbleW - paddingX : paddingX;
+    lineSegments.forEach((segs, li) => {
+      const scrambled = scrambleSegments(segs);
+      const y = paddingY + (li + 1) * lineH - 3;
+      ctx.fillText(scrambled, xPos, y);
+    });
+  }
+
+  // ── Pure-JS GIF encoder ──
+  // Minimal GIF89a encoder — no workers, no CDN
+  async function encodeGIF(frames, w, h, delay, onProgress) {
+    // frames: array of ImageData or canvas pixel arrays (Uint8ClampedArray RGBA)
+    const DELAY = Math.round(delay / 10); // GIF delay in 1/100s
+
+    function byte(n) { return n & 0xFF; }
+    function word(n) { return [n & 0xFF, (n >> 8) & 0xFF]; }
+
+    // Build a simple 256-colour palette (web-safe + our greens/golds)
+    // We'll use NeuQuant-style quantisation per frame via offscreen canvas
+    // but for simplicity use a fixed palette that covers our colours well
+    const palette = [];
+    // 216 web-safe colours
+    for (let r = 0; r < 6; r++)
+      for (let g = 0; g < 6; g++)
+        for (let b = 0; b < 6; b++)
+          palette.push([r*51, g*51, b*51]);
+    // Fill to 256
+    while (palette.length < 256) palette.push([0,0,0]);
+
+    function nearestIdx(r,g,b) {
+      const key = (r >> 2) << 12 | (g >> 2) << 6 | (b >> 2);
+      if (nearestIdx._c.has(key)) return nearestIdx._c.get(key);
+      let best = 0, bestD = Infinity;
+      for (let i = 0; i < palette.length; i++) {
+        const dr=r-palette[i][0], dg=g-palette[i][1], db=b-palette[i][2];
+        const d = dr*dr + dg*dg*2 + db*db; // weight green channel
+        if (d < bestD) { bestD=d; best=i; }
+      }
+      nearestIdx._c.set(key, best);
+      return best;
+    }
+    nearestIdx._c = new Map();
+
+    // LZW compression
+    function lzwEncode(indices, minCodeSize) {
+      const clearCode = 1 << minCodeSize;
+      const eofCode   = clearCode + 1;
+      let codeSize = minCodeSize + 1;
+      let limit     = (1 << codeSize);
+      let nextCode  = eofCode + 1;
+      const table   = new Map();
+
+      const out = [];
+      let buf = 0, bufBits = 0;
+
+      function emit(code) {
+        buf |= code << bufBits;
+        bufBits += codeSize;
+        while (bufBits >= 8) { out.push(buf & 0xFF); buf >>= 8; bufBits -= 8; }
+      }
+
+      function resetTable() {
+        table.clear();
+        for (let i = 0; i < clearCode; i++) table.set(String(i), i);
+        codeSize = minCodeSize + 1;
+        limit = 1 << codeSize;
+        nextCode = eofCode + 1;
+      }
+
+      resetTable();
+      emit(clearCode);
+
+      let str = String(indices[0]);
+      for (let i = 1; i < indices.length; i++) {
+        const ext = str + ',' + indices[i];
+        if (table.has(ext)) {
+          str = ext;
+        } else {
+          emit(table.get(str));
+          if (nextCode < 4096) {
+            table.set(ext, nextCode++);
+            if (nextCode > limit && codeSize < 12) { codeSize++; limit <<= 1; }
+          } else {
+            emit(clearCode); resetTable();
+          }
+          str = String(indices[i]);
+        }
+      }
+      emit(table.get(str));
+      emit(eofCode);
+      if (bufBits > 0) out.push(buf & 0xFF);
+      return out;
+    }
+
+    function packSubBlocks(data) {
+      const out = [];
+      for (let i = 0; i < data.length; i += 255) {
+        const chunk = data.slice(i, i+255);
+        out.push(chunk.length, ...chunk);
+      }
+      out.push(0);
+      return out;
+    }
+
+    const bytes = [];
+
+    // Header
+    bytes.push(...[0x47,0x49,0x46,0x38,0x39,0x61]); // GIF89a
+    bytes.push(...word(w), ...word(h));
+    bytes.push(0xF7, 0, 0); // global CT flag, bg, aspect
+    // Global colour table (256 entries)
+    for (const [r,g,b] of palette) bytes.push(r,g,b);
+
+    // Netscape loop extension
+    bytes.push(0x21,0xFF,0x0B,
+      0x4E,0x45,0x54,0x53,0x43,0x41,0x50,0x45,0x32,0x2E,0x30, // NETSCAPE2.0
+      0x03,0x01,0x00,0x00,0x00);
+
+    for (let fi = 0; fi < frames.length; fi++) {
+      const frame = frames[fi];
+      // Graphic control ext (no disposal, delay)
+      bytes.push(0x21,0xF9,0x04,0x00,...word(DELAY),0x00,0x00);
+
+      // Image descriptor
+      bytes.push(0x2C,...word(0),...word(0),...word(w),...word(h),0x00);
+
+      // Map RGBA to palette indices
+      const rgba = frame;
+      const indices = new Uint8Array(w * h);
+      for (let p = 0; p < w * h; p++) {
+        const ri = p*4;
+        indices[p] = nearestIdx(rgba[ri], rgba[ri+1], rgba[ri+2]);
+      }
+
+      const minCodeSize = 8;
+      bytes.push(minCodeSize);
+      const compressed = lzwEncode(indices, minCodeSize);
+      bytes.push(...packSubBlocks(compressed));
+
+      // Yield to UI thread between frames so progress bar updates
+      if (onProgress) onProgress(fi + 1, frames.length);
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    bytes.push(0x3B); // trailer
+    return new Uint8Array(bytes);
+  }
+
+  // ── Render frames ──
+  const TOTAL = 20;
+  const frameData = [];
+  for (let f = 0; f < TOTAL; f++) {
+    renderFrame();
+    frameData.push(new Uint8ClampedArray(ctx.getImageData(0, 0, bubbleW, bubbleH).data));
+
+    const pct = Math.round((f + 1) / TOTAL * 50);
+    document.getElementById('gifProgressBar').style.width = pct + '%';
+    document.getElementById('gifStatus').textContent = `Frames ${f+1}/${TOTAL}`;
+    await new Promise(r => setTimeout(r, 4)); // real yield for Android
+  }
+
+  document.getElementById('gifStatus').textContent = 'Encoding GIF…';
+  document.getElementById('gifProgressBar').style.width = '55%';
+  await new Promise(r => setTimeout(r, 16));
+
+  const gifBytes = await encodeGIF(frameData, bubbleW, bubbleH, gifFrameDelay, (done, total) => {
+    const pct = 55 + Math.round(done / total * 40);
+    document.getElementById('gifProgressBar').style.width = pct + '%';
+    document.getElementById('gifStatus').textContent = `Encoding ${done}/${total}…`;
+  });
+
+  document.getElementById('gifProgressBar').style.width = '100%';
+  document.getElementById('gifStatus').textContent = '✓ Klaar!';
+  await new Promise(r => setTimeout(r, 16));
+
+  const blob = new Blob([gifBytes], { type: 'image/gif' });
+  const url  = URL.createObjectURL(blob);
+
+  // Store blob globally so sendGifWhatsApp() can access it
+  window._lastGifBlob = blob;
+  window._lastGifUrl  = url;
+
+  const img = document.getElementById('gifPreview');
+  img.src = url;
+  img.style.display = 'block';
+
+  // Show action buttons
+  document.getElementById('gifActions').style.display = 'flex';
+
+  // Reset step buttons to initial state
+  const s1 = document.getElementById('gifStep1Btn');
+  s1.textContent = '⬇ Stap 1 — Sla GIF op';
+  s1.style.background = 'var(--gold)';
+  s1.style.color = '#fff';
+  s1.style.border = 'none';
+  s1.onclick = gifStep1;
+  document.getElementById('gifStep2Btn').style.display = 'none';
+
+  // Hint
+  const hint = document.getElementById('gifHint');
+  hint.style.display = 'block';
+  const selectedChip = document.querySelector('.contact-chip.selected');
+  const contactName = selectedChip ? selectedChip.textContent.replace(/✕$/, '').trim() : null;
+  hint.textContent = contactName
+    ? `Sla op → open chat met ${contactName} → stuur als foto.`
+    : 'Sla op → open WhatsApp → stuur als foto.';
+}
+
+// ── GIF 2-stap WhatsApp flow ──
+async function gifStep1() {
+  const blob = window._lastGifBlob;
+  if (!blob) return;
+
+  const file = new File([blob], 'scramble.gif', { type: 'image/gif' });
+
+  // Try Web Share API with file (triggers iOS share sheet — user picks Save Image)
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'Down Under GIF' });
+      // After saving, show step 2
+      _showGifStep2();
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return; // cancelled, do nothing
+    }
+  }
+
+  // Fallback: trigger anchor download
+  const url = window._lastGifUrl;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'scramble.gif';
+  a.click();
+  _showGifStep2();
+}
+
+function _showGifStep2() {
+  // Update step 1 button to show done state
+  const s1 = document.getElementById('gifStep1Btn');
+  s1.textContent = '✓ GIF opgeslagen';
+  s1.style.background = 'rgba(0,0,0,0.06)';
+  s1.style.color = 'var(--sub)';
+  s1.style.border = '1px solid var(--border)';
+  s1.onclick = null;
+
+  // Get contact info for label
+  const selectedChip = document.querySelector('.contact-chip.selected');
+  const contactName = selectedChip ? selectedChip.textContent.replace(/✕$/, '').trim() : null;
+  const s2 = document.getElementById('gifStep2Btn');
+  s2.style.display = 'flex';
+  if (contactName) {
+    s2.querySelector('svg').insertAdjacentText('afterend', ` Open chat met ${contactName}`);
+    // remove any leftover text node first
+    [...s2.childNodes].filter(n => n.nodeType === 3).forEach(n => n.remove());
+    s2.innerHTML = s2.innerHTML; // re-render (done via _showGifStep2 label below)
+  }
+  _updateStep2Label();
+
+  // Update hint
+  const hint = document.getElementById('gifHint');
+  hint.style.display = 'block';
+  hint.textContent = 'Tik op Stap 2 → kies de GIF uit je Foto\'s album.';
+}
+
+function _updateStep2Label() {
+  const selectedChip = document.querySelector('.contact-chip.selected');
+  const contactName = selectedChip ? selectedChip.textContent.replace(/✕$/, '').trim() : null;
+  const s2 = document.getElementById('gifStep2Btn');
+  s2.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+    ${contactName ? `Stap 2 — Open chat met ${contactName}` : 'Stap 2 — Open WhatsApp'}`;
+}
+
+function gifStep2() {
+  const rawPhone = document.getElementById('phone').value.trim();
+  const phone = rawPhone.replace(/\D/g, '');
+  const url = phone ? `https://wa.me/${phone}` : 'https://wa.me/';
+  window.open(url, '_blank');
+}
+
+// Keep old function name as alias in case referenced elsewhere
+function sendGifWhatsApp() { gifStep1(); }
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ── Input icons: keyboard focus (both buttons open the keyboard; the mic
+// button relies on the device keyboard's own built-in dictation icon —
+// a webpage cannot trigger that native mic function itself) ──
+function focusInputKeyboard() {
+  document.getElementById('input').focus();
+}
+
+// ── Init (safe order: all functions defined above) ──
+['reverse','secret','translate'].forEach(m => {
+  document.getElementById('mode' + m.charAt(0).toUpperCase() + m.slice(1))
+    .classList.toggle('active', activeModes.includes(m));
+});
+// Init translate-wrap highlight
+const _wrap = document.getElementById('modeTranslate').closest('.translate-wrap');
+if (_wrap) _wrap.classList.toggle('translate-active', activeModes.includes('translate'));
+applyTranslations();
+updateScrambleModeBtn();
+renderContacts();
+
+// ── iOS: visualViewport keyboard shrink fix ──
+// When the iOS soft keyboard opens, the viewport shrinks but body height doesn't
+// adjust properly. We pin the body height to the visual viewport height.
+if (window.visualViewport) {
+  const vv = window.visualViewport;
+  function onVVResize() {
+    // Only apply on mobile (narrow screens)
+    if (window.innerWidth > 768) return;
+    document.body.style.height = vv.height + 'px';
+  }
+  vv.addEventListener('resize', onVVResize);
+  vv.addEventListener('scroll', onVVResize);
+  onVVResize();
+}
+
+// ── iOS: prevent rubber-band scroll on body (allow only inside main/modals) ──
+document.body.addEventListener('touchmove', function(e) {
+  // Allow scrolling inside elements with overflow-y: auto
+  let el = e.target;
+  while (el && el !== document.body) {
+    const style = window.getComputedStyle(el);
+    const overflow = style.overflowY;
+    if ((overflow === 'auto' || overflow === 'scroll') && el.scrollHeight > el.clientHeight) {
+      return; // let it scroll
+    }
+    el = el.parentElement;
+  }
+  e.preventDefault();
+}, { passive: false });
+
+
+
+// ═══════════════════════════════════════
+// SPLASH SCREEN ANIMATION
+// ═══════════════════════════════════════
+function startSplashAnim() {
+  const INPUT_TEXT = "G'day mate, put some shrimp on the barbie";
+
+  const flipMap = {
+    "G":"⅁","g":"ƃ","'":","," ":" ",",":"'",
+    "d":"p","D":"ᗡ","a":"ɐ","A":"∀","y":"ʎ","Y":"⅄",
+    "m":"ɯ","M":"W","t":"ʇ","T":"ʇ","e":"ǝ","E":"Ǝ",
+    "p":"d","u":"n","s":"s","h":"ɥ","i":"ᴉ","r":"ɹ",
+    "n":"u","o":"o","b":"q","r":"ɹ","i":"ᴉ","e":"ǝ"
+  };
+
+  // Flipped + reversed = upside-down reading
+  const OUTPUT_CHARS = INPUT_TEXT.split("").map(c => flipMap[c] || c).reverse();
+
+  // Scrambled version - matches main app rules:
+  // ≤2 letters: unchanged. 3 letters: first fixed only. 4 letters with same 2nd+3rd: first fixed only. Otherwise: first+last fixed.
+  function scrambleText(txt) {
+    const words = txt.split(" ");
+    return words.map(w => {
+      if (w.length <= 2) return w;
+      if (w.length === 3) {
+        // Only first fixed, shuffle last two
+        const rest = w.slice(1).split('');
+        [rest[0], rest[1]] = [rest[1], rest[0]];
+        return w[0] + rest.join('');
+      }
+      if (w.length === 4 && w[1] === w[2]) {
+        // Only first fixed, shuffle rest
+        const rest = w.slice(1).split('');
+        for (let i = rest.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [rest[i], rest[j]] = [rest[j], rest[i]];
+        }
+        return w[0] + rest.join('');
+      }
+      // Default: first and last fixed, shuffle middle
+      const first = w[0], last = w[w.length - 1];
+      const middle = w.slice(1, -1).split('');
+      for (let i = middle.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [middle[i], middle[j]] = [middle[j], middle[i]];
+      }
+      return first + middle.join('') + last;
+    }).join(" ");
+  }
+
+  const inputEl   = document.getElementById("demo-input-bubble");
+  const outputEl  = document.getElementById("demo-output-bubble");
+  const output2El = document.getElementById("demo-output-bubble2");
+  const output3El = document.getElementById("demo-output-bubble3");
+  const splash    = document.getElementById("splash");
+
+  const CHINESE = "朋友你好，在烤肉架上放点虾吧";
+  const chineseLen = CHINESE.length;
+
+  // Clear previous state
+  inputEl.textContent = "";
+  inputEl.classList.remove("done");
+  outputEl.innerHTML = "";
+  output2El.innerHTML = "";
+  output2El.classList.remove("visible");
+  output3El.textContent = "";
+  output3El.classList.remove("visible");
+
+  // Build output1 spans (all hidden initially)
+  OUTPUT_CHARS.forEach(ch => {
+    const span = document.createElement("span");
+    span.className = "demo-out-char";
+    span.textContent = ch === " " ? " " : ch;
+    outputEl.appendChild(span);
+  });
+
+  const totalChars = INPUT_TEXT.length;
+  const outSpans = outputEl.querySelectorAll(".demo-out-char");
+  let inputIdx = 0, phase = "typing";
+  let scrambleTimer = null;
+
+  const DEMO_VARIANTS = {
+    a:['á','à','â','ä','ã'], c:['ç','č'], e:['é','è','ê','ë'],
+    i:['í','ì','î','ï'], n:['ñ','ń'], o:['ó','ò','ô','ö','õ'],
+    s:['š','ś'], u:['ú','ù','û','ü'], y:['ý'], z:['ž'],
+    A:['Á','À','Â','Ä'], E:['É','È','Ê','Ë'],
+    I:['Í','Ì','Î','Ï'], N:['Ñ'], O:['Ó','Ò','Ô','Ö'],
+    U:['Ú','Ù','Û','Ü'], Y:['Ý'], Z:['Ž'],
+  };
+  function demoVariant(c) {
+    const opts = DEMO_VARIANTS[c];
+    return opts ? opts[Math.floor(Math.random() * opts.length)] : c;
+  }
+
+  function tick() {
+    if (phase === "typing") {
+      if (inputIdx < totalChars) {
+        inputEl.textContent = INPUT_TEXT.slice(0, ++inputIdx);
+
+        // Bubble 1: reveal corresponding reversed char
+        const revIdx = totalChars - inputIdx;
+        if (outSpans[revIdx]) outSpans[revIdx].classList.add("show");
+
+        // Bubble 2: show scrambled version of reversed chars revealed so far
+        output2El.classList.add("visible");
+        const revealedText = OUTPUT_CHARS.slice(revIdx).join("");
+        output2El.innerHTML = "";
+        const scrambled = scrambleText(revealedText);
+        const words = scrambled.split(" ");
+        words.forEach((word, wi) => {
+          if (wi > 0) {
+            const sp = document.createElement("span");
+            sp.className = "demo-out-char2";
+            sp.textContent = " ";
+            output2El.appendChild(sp);
+          }
+          [...word].forEach(ch => {
+            const span = document.createElement("span");
+            span.className = "demo-out-char2";
+            if (/[a-zA-Z]/.test(ch) && Math.random() < 0.4) {
+              span.textContent = demoVariant(ch);
+              span.classList.add("glitch");
+            } else {
+              span.textContent = ch;
+            }
+            output2El.appendChild(span);
+          });
+        });
+
+        setTimeout(tick, 65 + Math.random() * 45);
+
+        // Bubble 3: reveal Chinese chars proportionally to typing progress
+        const progress = inputIdx / totalChars;
+        const charsToShow = Math.round(progress * chineseLen);
+        output3El.textContent = CHINESE.slice(0, charsToShow);
+        if (charsToShow > 0) output3El.classList.add("visible");
+      } else {
+        inputEl.classList.add("done");
+        output3El.textContent = CHINESE;
+        output3El.classList.add("visible");
+        phase = "scrambling";
+        setTimeout(tick, 300);
+      }
+    } else if (phase === "scrambling") {
+      // Animate scramble of full reversed text
+      const reversedText = OUTPUT_CHARS.join("");
+      let base = scrambleText(reversedText);
+      let frame = 0;
+      const FRAMES = 18;
+
+      scrambleTimer = setInterval(() => {
+        base = scrambleText(reversedText);
+        output2El.innerHTML = "";
+        const words = base.split(" ");
+        words.forEach((word, wi) => {
+          if (wi > 0) {
+            const sp = document.createElement("span");
+            sp.className = "demo-out-char2";
+            sp.textContent = " ";
+            output2El.appendChild(sp);
+          }
+          [...word].forEach(ch => {
+            const span = document.createElement("span");
+            span.className = "demo-out-char2";
+            if (/[a-zA-Z]/.test(ch) && Math.random() < 0.4) {
+              span.textContent = demoVariant(ch);
+              span.classList.add("glitch");
+            } else {
+              span.textContent = ch;
+            }
+            output2El.appendChild(span);
+          });
+        });
+        frame++;
+        if (frame >= 17) {
+          clearInterval(scrambleTimer);
+          setTimeout(dismissSplash, 0);
+        }
+      }, 90);
+    }
+  }
+
+  function dismissSplash() {
+    if (scrambleTimer) clearInterval(scrambleTimer);
+    splash.classList.add("hide");
+    setTimeout(() => { splash.style.display = "none"; }, 650);
+  }
+
+  setTimeout(tick, 800);
+  splash.addEventListener("click", dismissSplash, { once: true });
+}
+
+function reopenSplash() {
+  const splash = document.getElementById("splash");
+  splash.style.display = "flex";
+  splash.classList.remove("hide");
+  startSplashAnim();
+}
+
+function dismissSplashAndMode(mode) {
+  // Dismiss splash
+  const splash = document.getElementById("splash");
+  splash.classList.add("hide");
+  setTimeout(() => { splash.style.display = "none"; }, 650);
+  // Activate chosen mode
+  setMode(mode);
+  // Focus input
+  setTimeout(() => { document.getElementById('input')?.focus(); }, 700);
+}
+
+startSplashAnim();
+
+// Cycle the 12 app language flags on splash translate button
+(function() {
+  const flags = TARGET_LANGS.map(l => l.flag);
+  const interval = Math.floor(5000 / flags.length);
+  let fi = 0;
+  const timer = setInterval(() => {
+    fi = (fi + 1) % flags.length;
+    const el = document.getElementById('splashTranslateFlag');
+    if (el) el.textContent = flags[fi];
+    else clearInterval(timer);
+  }, interval);
+})();
+// Animate middle letters of "Scramble" label
+(function() {
+  const word = 'crambl'; // middle 6 chars — S and e are fixed
+  const ids = ['sl1','sl2','sl3','sl4','sl5','sl6'];
+  setInterval(() => {
+    const mid = word.split('');
+    for (let i = mid.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [mid[i], mid[j]] = [mid[j], mid[i]];
+    }
+    ids.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = mid[i];
+    });
+  }, 120);
+})();
+
+</script>
+</body>
+</html>
